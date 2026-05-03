@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  username     String
+  email        String       @unique
+  googleId     String?      @unique
+  password     String?
+  storageUsed  Int          @default(0)
+  imageUrl     String?
+  createdAt    DateTime     @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  authProvider AuthProvider @default(local)
+
+  @@index([email])
+}
+
+model EmailOTP {
+  id        String   @id @default(uuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // optional improvement:
+  // userId String
+  // user   User @relation(fields: [userId], references: [id])
+}
+
+enum AuthProvider {
+  local
+  google
+  otp
+}
