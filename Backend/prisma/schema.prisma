@@ -14,19 +14,97 @@ model User {
   googleId     String?      @unique
   password     String?
   storageUsed  Int          @default(0)
+
+  storageLimit BigInt       @default(10737418240) // 10GB
+  subscriptionPlan String   @default("BASIC")
+  subscriptionId   String?
+  dodoCustomerId   String?
+
   imageUrl     String?
+
   createdAt    DateTime     @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  updatedAt    DateTime     @default(now()) @updatedAt
+
   authProvider AuthProvider @default(local)
+
+  tokenVersion Int @default(0)
+  refreshTokenHash String?
+  refreshTokenExpiresAt DateTime?
+
+  files        File[]
+  folders      Folder[]
+
+  notifications Notification[]
+
+  sharedBy FileShare[] @relation("SharedBy")
+
+  sharedTo FileShare[] @relation("SharedTo")
+
+  publicShares PublicShare[]
 
   @@index([email])
 }
+
+model File {
+  id            String   @id @default(uuid())
+
+  fileName      String
+  originalName  String
+
+  url           String
+  publicId      String
+
+  mimeType      String
+  size          Int
+
+  isStarred     Boolean  @default(false)
+  isTrash       Boolean  @default(false)
+
+  ownerId       String
+  owner         User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  folderId      String?
+  folder        Folder? @relation(fields: [folderId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sharedWith FileShare[] @relation("FileShares")
+  publicShares PublicShare[]
+
+  @@index([ownerId])
+  @@index([folderId])
+}
+
+model Folder {
+  id          String   @id @default(uuid())
+
+  name        String
+
+  ownerId     String
+  owner       User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  parentId    String?
+  parent      Folder? @relation("FolderHierarchy", fields: [parentId], references: [id])
+
+  children    Folder[] @relation("FolderHierarchy")
+
+  files       File[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([parentId])
+}
+
 
 model EmailOTP {
   id        String   @id @default(uuid())
   email     String
   otp       String
   expiresAt DateTime
+  attempts  Int      @default(0)
   createdAt DateTime @default(now())
 
   // optional improvement:
@@ -38,4 +116,67 @@ enum AuthProvider {
   local
   google
   otp
+}
+
+
+model Notification {
+  id String @id @default(uuid())
+
+  message String
+  isRead Boolean @default(false)
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+
+model FileShare {
+  id String @id @default(uuid())
+
+  fileId String
+  file File @relation("FileShares", fields:[fileId], references:[id], onDelete:Cascade)
+
+  sharedById String
+  sharedBy User @relation("SharedBy", fields: [sharedById], references: [id])
+
+  sharedToId String
+  sharedTo User @relation("SharedTo", fields: [sharedToId], references: [id])
+
+  permission SharePermission @default(VIEW)
+
+  createdAt DateTime @default(now())
+
+  @@unique([fileId, sharedToId])
+  @@index([sharedToId])
+}
+
+
+model PublicShare {
+  id String @id @default(uuid())
+
+  token String @unique
+
+  fileId String
+  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  isActive Boolean @default(true)
+
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  ownerId String
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([ownerId])
+}
+
+enum SharePermission {
+  VIEW
+  EDIT
 }

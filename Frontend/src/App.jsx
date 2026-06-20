@@ -1,32 +1,32 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import SignUp from './pages/signUp';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './routes/ProtectedRoute';
 import NotFound from './pages/NotFound';
 import HomePage from './pages/HomePage';
-import { useState,useEffect } from 'react';
+import Notifications from './pages/Notifications';
+import Profile from "./pages/Profile";
+import PublicSharePage from './pages/PublicSharePage';
+import HelpPage from './pages/help';
+import Pricing from './pages/Pricing';
+import PaymentSuccess from './pages/PaymentSuccess';
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
-
- useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
-  }, []);
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* Home */}
-        <Route path="/" element={<HomePage />} />
-
-        {/* Auth Routes */}
+       <Route path="/" element={<HomePage />} />
        <Route path="/login" element={<Login />} />
-<Route path="/signup" element={<SignUp />} />
-
-        {/* Protected Route */}
-        <Route 
+       <Route path="/signup" element={<SignUp />} />
+       <Route path="/help" element={<HelpPage />} />
+       <Route path="/pricing" element={<Pricing />} />
+       <Route path="/payment-success" element={
+         <ProtectedRoute>
+           <PaymentSuccess />
+         </ProtectedRoute>
+       } />
+       <Route 
           path="/dashboard" 
           element={
             <ProtectedRoute>
@@ -34,8 +34,24 @@ function App() {
             </ProtectedRoute>
           } 
         />
-
-        {/* Catch All (404) */}
+         <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          }
+        />
+        {/* Public share route — no auth required */}
+        <Route path="/share/:token" element={<PublicSharePage />} />
         <Route path="*" element={<NotFound />} />
 
       </Routes>
