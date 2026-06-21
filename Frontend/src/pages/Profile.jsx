@@ -7,17 +7,14 @@ import {
   Settings, Star, Gift
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { apiUrl, authFetch } from "../utils/auth";
 import { SUBSCRIPTION_UPDATED_EVENT } from "../utils/subscription";
 import ThemeToggle from "../components/ui/ThemeToggle";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProfile, updateUserProfile, uploadProfileImage, deleteProfileImage } from "../store/slices/authSlice";
-
-const USER_API_URL = apiUrl("/user");
-const FILES_API_URL = apiUrl("/files");
-const FOLDERS_API_URL = apiUrl("/folders");
+import { fetchAllFiles } from "../store/slices/filesSlice";
+import { fetchFolders } from "../store/slices/foldersSlice";
 
 const ProfileSkeleton = () => (
   <div className="h-full animate-pulse p-6 max-w-5xl mx-auto space-y-6">
@@ -48,13 +45,12 @@ export default function ProfilePage() {
   const updating = useSelector((state) => state.auth.updating);
   const uploading = useSelector((state) => state.auth.uploading);
   const deletingImage = useSelector((state) => state.auth.deletingImage);
+  const allFiles = useSelector((state) => state.files.allFiles);
+  const folders = useSelector((state) => state.folders.folders);
 
   const [username, setUsername] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-
-  // Quick stats (derived from existing backend routes)
-  const [stats, setStats] = useState({ files: 0, folders: 0 });
 
   const fileInputRef = useRef(null);
 
@@ -76,36 +72,17 @@ export default function ProfilePage() {
     }
   }, [dispatch]);
 
-  const fetchStats = async () => {
-    try {
-      const [filesRes, foldersRes] = await Promise.all([
-        authFetch(FILES_API_URL),
-        authFetch(FOLDERS_API_URL),
-      ]);
+  const fetchStats = useCallback(() => {
+    dispatch(fetchAllFiles());
+    dispatch(fetchFolders());
+  }, [dispatch]);
 
-      const filesData = filesRes.ok ? await filesRes.json() : null;
-      const foldersData = foldersRes.ok ? await foldersRes.json() : null;
-
-      const files = Array.isArray(filesData)
-        ? filesData
-        : filesData?.files || [];
-      const folders = Array.isArray(foldersData)
-        ? foldersData
-        : foldersData?.folders || [];
-
-      setStats({
-        files: files.length,
-        folders: folders.length,
-      });
-    } catch {
-      // Keep profile page working even if stats fail.
-    }
-  };
+  const stats = { files: allFiles.length, folders: folders.length };
 
   useEffect(() => {
     fetchProfileData();
     fetchStats();
-  }, [fetchProfileData]);
+  }, [fetchProfileData, fetchStats]);
 
   useEffect(() => {
     const handleSubscriptionUpdated = () => {

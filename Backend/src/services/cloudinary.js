@@ -8,9 +8,7 @@ cloudinary.config({
 });
 
 
-// ==========================
-// UPLOAD FILE
-// ==========================
+
 
 const uploadOnCloudinary = async (localFilePath) => {
 
