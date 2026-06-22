@@ -119,3 +119,29 @@ export const deleteFilesByFolderId = async (folderId) => {
     }
   });
 };
+
+export const moveFileToTrash = async (fileId) => {
+  return prisma.file.update({
+    where: { id: fileId },
+    data: { isTrash: true },
+  });
+};
+
+export const restoreFileFromTrash = async (fileId) => {
+  return prisma.file.update({
+    where: { id: fileId },
+    data: { isTrash: false },
+  });
+};
+
+export const getTrashFilesByUserId = async (userId) => {
+  return prisma.file.findMany({
+    where: {
+      ownerId: userId,
+      isTrash: true,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+};
